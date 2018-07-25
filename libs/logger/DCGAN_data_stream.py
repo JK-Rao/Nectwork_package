@@ -12,6 +12,6 @@ class DCGANWriter(TfWriter):
         TfWriter.__init__(self, 32, 20, 1)
 
 
-def DCGAN_get_pipeline(sess, batch_size, filename):
-    stream = DataPipeline('tfrecords', './data')
+def DCGAN_get_pipeline(sess, propose, batch_size, filename):
+    stream = DataPipeline('.tfrecords', propose, './data')
     return stream.tfrecords2imgs(sess, filename, batch_size, DCGANReader(), cv2.IMREAD_GRAYSCALE)

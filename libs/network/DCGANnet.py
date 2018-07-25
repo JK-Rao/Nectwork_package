@@ -4,8 +4,7 @@ from .network import Network
 
 class DCGANnet(Network):
     def __init__(self, net_name, IMG_SHAPE):
-        Network.__init__(self)
-        self.net_name = net_name
+        Network.__init__(self, net_name)
         self.IMG_HEIGHT = IMG_SHAPE[0]
         self.IMG_WIDTH = IMG_SHAPE[1]
         self.IMG_CHANEL = IMG_SHAPE[2]

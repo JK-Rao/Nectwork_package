@@ -13,7 +13,8 @@ def layer(op):
 
 
 class Network(object):
-    def __init__(self):
+    def __init__(self,net_name):
+        self.net_name=net_name
         self.pre_process_tensor = None
         self.input = None
         self.layers = []

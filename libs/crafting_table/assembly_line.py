@@ -2,19 +2,18 @@ import tensorflow as tf
 
 
 class AssemblyLine(object):
-    def __init__(self, propose, config, network, data_pipeline):
-        self.propose = propose
+    def __init__(self, config, network):
         self.sess = tf.Session(config=config)
         self.network = network
-        self.dataPipeline = data_pipeline
         self.iter_num = 0
         self.summary_writer = None
 
     def create_summary(self, log_path):
         summ_dict = self.network.get_summary()
+        merged = None
+        writer = None
         for key in summ_dict:
             tf.summary.scalar(key, summ_dict[key])
-        with self.sess:
             merged = tf.summary.merge_all()
             writer = tf.summary.FileWriter(log_path, self.sess.graph)
             self.summary_writer = writer

@@ -61,17 +61,21 @@ class TfReader(object):
 
 
 class DataPipeline(object):
-    def __init__(self, data_type, root_path, train_dir='train', val_dir='val', test_dir='test'):
+    def __init__(self, data_type,propose, root_path, train_dir='train', val_dir='val', test_dir='test'):
         self.data_type = data_type
+        self.propose=propose
         self.root_path = root_path
         self.xxx_dir = {'train': train_dir, 'val': val_dir, 'test': test_dir}
 
     def set_dataType(self, data_type):
         self.data_type = data_type
 
+    def set_propose(self,propose):
+        self.propose=propose
+
     def imgs2tfrecords(self, object_path, object_name, recorder=TfWriter(), flag=cv2.IMREAD_COLOR):
         writer = tf.python_io.TFRecordWriter(join(object_path, object_name + '.tfrecords'))
-        file_path = join(self.root_path, self.xxx_dir[self.data_type])
+        file_path = join(self.root_path, self.xxx_dir[self.propose])
         file_lines = os.listdir(file_path)
         for index, file_name in enumerate(file_lines):
             im = cv2.imread(join(file_path, file_name), flags=flag)
@@ -84,6 +88,6 @@ class DataPipeline(object):
         print('writing end...')
 
     def tfrecords2imgs(self, sess, tf_data_name, batch_size, recorder=TfReader(), flag=cv2.IMREAD_COLOR):
-        tfdata_path = join(self.root_path, self.xxx_dir[self.data_type])
-        img_data = sess.run(recorder.load_sample(join(tfdata_path, tf_data_name), batch_size, None))
+        tfdata_path = join(self.root_path, self.xxx_dir[self.propose])
+        img_data = sess.run(recorder.load_sample(join(tfdata_path, tf_data_name+self.data_type), batch_size, None))
         return img_data
