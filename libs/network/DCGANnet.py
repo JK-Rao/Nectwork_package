@@ -14,6 +14,8 @@ class DCGANnet(Network):
         self.on_train = tf.placeholder(tf.bool, name='on_train')
         self.batch_size = tf.placeholder(tf.int32, name='batch_size')
         self.globsl_step = tf.Variable(0, trainable=False)
+        self.min_distance = tf.Variable(0., trainable=False)
+        self.ave_distance = tf.Variable(0., trainable=False)
 
         self.gen_im = None
         self.dis_real = None
@@ -26,10 +28,23 @@ class DCGANnet(Network):
         self.dis_real = self.setup_d(self.X, self.net_name[1])
         self.dis_fake = self.setup_d(self.gen_im, self.net_name[1], reuse=True)
 
+    def get_summary(self):
+        return {'val_loss': self.structure_loss()['val_loss'],
+                'd_loss': self.structure_loss()['d_loss'],
+                'g_loss': self.structure_loss()['g_loss'],
+                'min_distance': self.min_distance,
+                'ave_distance': self.ave_distance}
+
     def get_pred(self):
         return {'gen_im': self.gen_im,
                 'dis_real': self.dis_real,
                 'dis_fake': self.dis_fake}
+
+    def get_gen_vars(self):
+        return self.get_trainable_var(self.net_name[0])
+
+    def get_dis_vars(self):
+        return self.get_trainable_var(self.net_name[1])
 
     def structure_loss(self):
         ep = 1e-7
@@ -43,10 +58,10 @@ class DCGANnet(Network):
     def define_optimizer(self):
         loss_dict = self.structure_loss()
         D_optimizer = tf.train.AdamOptimizer(0.0002).minimize(loss_dict['d_loss'],
-                                                              var_list=self.get_trainable_var(self.net_name[0]))
+                                                              var_list=self.get_gen_vars())
         G_optimizer = tf.train.AdamOptimizer(0.001).minimize(loss_dict['g_loss'],
                                                              global_step=self.globsl_step,
-                                                             var_list=self.get_trainable_var(self.net_name[1]))
+                                                             var_list=self.get_dis_vars())
         return {'d_opti': D_optimizer, 'g_opti': G_optimizer}
 
     def setup_g(self, x, scope_name, reuse=False, load_net=False):

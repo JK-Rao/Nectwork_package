@@ -21,6 +21,9 @@ class Network(object):
     def setup(self):
         raise NotImplementedError('Must be subclassed.')
 
+    def get_summary(self):
+        raise NotImplementedError('Must be subclassed.')
+
     def get_pred(self):
         raise NotImplementedError('Must be subclassed.')
 
