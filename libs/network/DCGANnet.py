@@ -8,13 +8,14 @@ class DCGANnet(Network):
         self.IMG_HEIGHT = IMG_SHAPE[0]
         self.IMG_WIDTH = IMG_SHAPE[1]
         self.IMG_CHANEL = IMG_SHAPE[2]
+        self.Z_dim=100
         self.X = tf.placeholder(tf.float32, shape=[None, self.IMG_HEIGHT, self.IMG_WIDTH, self.IMG_CHANEL], name='X')
         self.Z = tf.placeholder(tf.float32, shape=[None, 100], name='Z')
         self.on_train = tf.placeholder(tf.bool, name='on_train')
         self.batch_size = tf.placeholder(tf.int32, name='batch_size')
         self.globsl_step = tf.Variable(0, trainable=False)
-        self.min_distance = tf.Variable(0., trainable=False)
-        self.ave_distance = tf.Variable(0., trainable=False)
+        self.Min_distance = tf.Variable(0., trainable=False)
+        self.Ave_distance = tf.Variable(0., trainable=False)
 
         self.gen_im = None
         self.dis_real = None
@@ -31,8 +32,8 @@ class DCGANnet(Network):
         return {'val_loss': self.structure_loss()['val_loss'],
                 'd_loss': self.structure_loss()['d_loss'],
                 'g_loss': self.structure_loss()['g_loss'],
-                'min_distance': self.min_distance,
-                'ave_distance': self.ave_distance}
+                'min_distance': self.Min_distance,
+                'ave_distance': self.Ave_distance}
 
     def get_pred(self):
         return {'gen_im': self.gen_im,

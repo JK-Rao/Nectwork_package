@@ -1,4 +1,5 @@
 import tensorflow as tf
+import os
 
 
 class AssemblyLine(object):
@@ -25,7 +26,10 @@ class AssemblyLine(object):
             self.summary_writer.add_summary(mg, self.iter_num)
 
     def close_summary_writer(self):
-        self.summary_writer.close()
+        if self.summary_writer is None:
+            print('Error in close writer...')
+        else:
+            self.summary_writer.close()
 
     def structure_train_context(self):
         raise NotImplementedError('Must be subclassed.')
@@ -39,3 +43,5 @@ class AssemblyLine(object):
     def save_model(self, saver, save_path_name, write_meta_graph=True):
         with self.sess:
             saver.save(self.sess, save_path_name, write_meta_graph=write_meta_graph)
+
+

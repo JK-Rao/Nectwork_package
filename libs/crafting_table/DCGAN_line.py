@@ -1,21 +1,26 @@
 from .assembly_line import AssemblyLine
 import tensorflow as tf
-from ..network.factory import get_network
 import numpy as np
-from ..logger.factory import get_sample
-from ..logger.data_pipeline import DataPipeline
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+import cv2
+from os.path import join
+import os
+from ..network.factory import get_network
+from ..logger.factory import get_sample
+from ..logger.data_pipeline import DataPipeline
+from ..tools.gadget import mk_dir
+from ..tools.overfitting_monitor import random_sampling
 
 
 class DCGANLine(AssemblyLine):
-    def __init__(self, inster_number, annotion,batch_size):
+    def __init__(self, inster_number, annotion,batch_size,val_size):
         AssemblyLine.__init__(self, DCGANLine.get_config(), get_network('DCGAN'))
         self.inster_number = inster_number
         self.annotion = annotion
         self.batch_size=batch_size
+        self.val_size=val_size
 
-        self.Z_dim = 100
 
     @staticmethod
     def get_config():
@@ -61,7 +66,7 @@ class DCGANLine(AssemblyLine):
                 if iter % 1000 == 0:
                     self.iter_num = iter
                     samples = self.sess.run(self.network.get_pred()['gen_im'], feed_dict={
-                        self.network.Z: self.sample_Z(16, self.Z_dim), self.network.on_train: False, self.network.batch_size: 16})  # 16*784
+                        self.network.Z: self.sample_Z(16, self.network.Z_dim), self.network.on_train: False, self.network.batch_size: 16})  # 16*784
                     fig = self.plot(samples)
                     plt.savefig('out_bank_CNN_num%d%s/' % (self.inster_number, self.annotion) + '/{}.png'.format(str(i).zfill(3)),
                                 bbox_inches='tight')
@@ -76,12 +81,12 @@ class DCGANLine(AssemblyLine):
                 #     batch_size: mb_size})
                 _, D_loss_curr = self.sess.run([opti_dict['d_opti'], loss_dict['d_loss']], feed_dict={
                     self.network.X: X_mb,
-                    self.network.Z: self.sample_Z(self.batch_size, self.Z_dim),
+                    self.network.Z: self.sample_Z(self.batch_size, self.network.Z_dim),
                     self.network.on_train: True,
                     self.network.batch_size: self.batch_size})
 
                 _, G_loss_curr = self.sess.run([opti_dict['g_opti'], loss_dict['g_loss']], feed_dict={
-                    self.network.Z: self.sample_Z(self.batch_size, self.Z_dim),
+                    self.network.Z: self.sample_Z(self.batch_size, self.network.Z_dim),
                     self.network.on_train: True,
                     self.network.batch_size: self.batch_size})
                 # if iter % 100 == 0:
@@ -90,35 +95,37 @@ class DCGANLine(AssemblyLine):
                     # overfitting record
                     j = 0
                     print('Iter:%d  G_loss:%f,D_loss:%f' % (iter, G_loss_curr, D_loss_curr))
-                    samples = sess.run(gen_im, feed_dict={
-                        Z: sample_Z(10000, Z_dim), on_train: False, batch_size: 10000})
+                    samples = self.sess.run(self.network.get_pred()['gen_im'], feed_dict={
+                        self.network.Z: self.sample_Z(10000, self.network.Z_dim),
+                        self.network.on_train: False, self.network.batch_size: 10000})
+                    PATH = './temp_CNN_num%d' % self.inster_number
                     for line in range(10000):
-                        cv2.imwrite('./temp_CNN_num%d/%08d.jpg' % (inster_number, j),
+                        mk_dir(PATH)
+                        cv2.imwrite(join(PATH,'%08d.jpg' % j),
                                     np.round((samples[line, :, :, 0] + 0.5) * 255))
                         j += 1
                     iter_num = 10
-                    PATH = './temp_CNN_num%d' % inster_number
                     file_names = os.listdir(PATH)
                     file_names = [os.path.join(PATH, a) for a in file_names]
-                    min_dis, ave_dis, _, _ = overfitting_testing.random_sampling(file_names, iter_num)
-                    sess.run(tf.assign(Min_distance, min_dis))
-                    sess.run(tf.assign(Ave_distance, ave_dis))
+                    min_dis, ave_dis, _, _ = random_sampling(file_names, iter_num)
+                    self.sess.run(tf.assign(self.network.Min_distance, min_dis))
+                    self.sess.run(tf.assign(self.network.Ave_distance, ave_dis))
                     # loss record
-                    X_val = sess.run(X_tensor_val) / 255. - 0.5
-                    mg = sess.run(merged, feed_dict={
-                        X: X_val,
-                        on_train: False,
-                        Z: sample_Z(val_size, Z_dim),
-                        batch_size: val_size})
-                    writer.add_summary(mg, iter)
+                    X_val = get_sample('DCGAN',self.sess,'val',self.batch_size,'train_num')
+                    mg = self.sess.run(self.network.merged, feed_dict={
+                        self.network.X: X_val,
+                        self.network.on_train: False,
+                        self.network.Z: self.sample_Z(self.val_size, self.network.Z_dim),
+                        self.network.batch_size: self.val_size})
+                    self.write_summary(mg)
 
-                gl_step = sess.run(global_step)
+                gl_step = self.sess.run(self.network.global_step)
                 if gl_step % 10000 == 0:
-                    saver.save(sess, './model_DCGAN_num%d%s/iter_%d_num%d.ckpt' \
-                               % (inster_number, annotion, gl_step, inster_number),
-                               write_meta_graph=False)
-            writer.close()
+                    self.save_model(saver,'./model_DCGAN_num%d%s/iter_%d_num%d.ckpt' \
+                               % (self.inster_number, self.annotion, gl_step, self.inster_number),
+                                    write_meta_graph=False)
+            self.close_summary_writer()
 
             coord.request_stop()
             coord.join(threads)
-        sess.close()
+        self.sess.close()
