@@ -61,17 +61,17 @@ class TfReader(object):
 
 
 class DataPipeline(object):
-    def __init__(self, data_type,propose, root_path, train_dir='train', val_dir='val', test_dir='test'):
+    def __init__(self, data_type, propose, root_path, train_dir='train', val_dir='val', test_dir='test'):
         self.data_type = data_type
-        self.propose=propose
+        self.propose = propose
         self.root_path = root_path
         self.xxx_dir = {'train': train_dir, 'val': val_dir, 'test': test_dir}
 
     def set_dataType(self, data_type):
         self.data_type = data_type
 
-    def set_propose(self,propose):
-        self.propose=propose
+    def set_propose(self, propose):
+        self.propose = propose
 
     def imgs2tfrecords(self, object_path, object_name, recorder=TfWriter(), flag=cv2.IMREAD_COLOR):
         writer = tf.python_io.TFRecordWriter(join(object_path, object_name + '.tfrecords'))
@@ -89,5 +89,8 @@ class DataPipeline(object):
 
     def tfrecords2imgs(self, sess, tf_data_name, batch_size, recorder=TfReader(), flag=cv2.IMREAD_COLOR):
         tfdata_path = join(self.root_path, self.xxx_dir[self.propose])
-        img_data = sess.run(recorder.load_sample(join(tfdata_path, tf_data_name+self.data_type), batch_size, None))
+        file_path_name = join(tfdata_path, tf_data_name + self.data_type)
+        if not os.path.exists(file_path_name):
+            raise IOError('No such file: \'%s\''%file_path_name)
+        img_data = sess.run(recorder.load_sample(file_path_name, batch_size, None))
         return img_data

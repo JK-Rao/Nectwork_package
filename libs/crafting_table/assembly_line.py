@@ -9,6 +9,8 @@ class AssemblyLine(object):
         self.iter_num = 0
         self.summary_writer = None
 
+        self.sess.as_default()
+
     def create_summary(self, log_path):
         summ_dict = self.network.get_summary()
         merged = None
@@ -41,7 +43,8 @@ class AssemblyLine(object):
         return tf.train.Saver(vars, max_to_keep=max_to_keep)
 
     def save_model(self, saver, save_path_name, write_meta_graph=True):
-        with self.sess:
-            saver.save(self.sess, save_path_name, write_meta_graph=write_meta_graph)
+        self.sess.as_default()
+        saver.save(self.sess, save_path_name, write_meta_graph=write_meta_graph)
+
 
 
