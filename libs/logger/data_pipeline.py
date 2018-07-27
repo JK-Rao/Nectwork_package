@@ -87,10 +87,19 @@ class DataPipeline(object):
                 print('processing %d/%d...' % (index, len(file_lines)))
         print('writing end...')
 
-    def tfrecords2imgs(self, sess, tf_data_name, batch_size, recorder=TfReader(), flag=cv2.IMREAD_COLOR):
+    def tfrecords2imgs_tensor(self, sess, tf_data_name, batch_size, recorder=TfReader(), flag=cv2.IMREAD_COLOR):
         tfdata_path = join(self.root_path, self.xxx_dir[self.propose])
         file_path_name = join(tfdata_path, tf_data_name + self.data_type)
         if not os.path.exists(file_path_name):
-            raise IOError('No such file: \'%s\''%file_path_name)
-        img_data = sess.run(recorder.load_sample(file_path_name, batch_size, None))
-        return img_data
+            raise IOError('No such file: \'%s\'' % file_path_name)
+        images_tensor = recorder.load_sample(file_path_name, batch_size, None)
+        return images_tensor
+    @staticmethod
+    def tensor2data( tensor):
+        with tf.Session() as sess:
+            coord = tf.train.Coordinator()
+            threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+            data = sess.run(tensor)
+            coord.request_stop()
+            coord.join(threads)
+        return data

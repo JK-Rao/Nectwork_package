@@ -12,8 +12,8 @@ class DCGANnet(Network):
         self.X = tf.placeholder(tf.float32, shape=[None, self.IMG_HEIGHT, self.IMG_WIDTH, self.IMG_CHANEL], name='X')
         self.Z = tf.placeholder(tf.float32, shape=[None, 100], name='Z')
         self.on_train = tf.placeholder(tf.bool, name='on_train')
-        self.batch_size = tf.placeholder(tf.int32, name='batch_size')
-        self.globsl_step = tf.Variable(0, trainable=False)
+        self.batch_pattern = tf.placeholder(tf.int32, name='batch_size')
+        self.global_step = tf.Variable(0, trainable=False)
         self.Min_distance = tf.Variable(0., trainable=False)
         self.Ave_distance = tf.Variable(0., trainable=False)
 
@@ -60,7 +60,7 @@ class DCGANnet(Network):
         D_optimizer = tf.train.AdamOptimizer(0.0002).minimize(loss_dict['d_loss'],
                                                               var_list=self.get_gen_vars())
         G_optimizer = tf.train.AdamOptimizer(0.001).minimize(loss_dict['g_loss'],
-                                                             global_step=self.globsl_step,
+                                                             global_step=self.global_step,
                                                              var_list=self.get_dis_vars())
         return {'d_opti': D_optimizer, 'g_opti': G_optimizer}
 
@@ -74,10 +74,10 @@ class DCGANnet(Network):
                     .reshape([-1, 8, 5, 128]) \
                     .normal(self.on_train, 0.5, [0, 1, 2], 'G_sca_line', 'G_off_line', 'G_mea_line', 'G_var_line') \
                     .relu() \
-                    .deconv2d([self.batch_size, 16, 10, 256], 3, 3, 2, 2, 'G_W_1', 'G_b_1', padding='SAME') \
+                    .deconv2d([self.batch_pattern, 16, 10, 256], 3, 3, 2, 2, 'G_W_1', 'G_b_1', padding='SAME') \
                     .normal(self.on_train, 0.5, [0, 1, 2], 'G_sca_1', 'G_off_1', 'G_mea_1', 'G_var_1') \
                     .relu() \
-                    .deconv2d([self.batch_size, 32, 20, self.IMG_CHANEL], 3, 3, 2, 2, 'G_W_2', 'G_b_2', padding='SAME') \
+                    .deconv2d([self.batch_pattern, 32, 20, self.IMG_CHANEL], 3, 3, 2, 2, 'G_W_2', 'G_b_2', padding='SAME') \
                     .tanh(2)
                 tf.add_to_collection(name='out', value=self.pre_process_tensor)
                 return self.pre_process_tensor

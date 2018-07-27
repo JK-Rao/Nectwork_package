@@ -14,18 +14,16 @@ class AssemblyLine(object):
     def create_summary(self, log_path):
         summ_dict = self.network.get_summary()
         merged = None
-        writer = None
         for key in summ_dict:
             tf.summary.scalar(key, summ_dict[key])
             merged = tf.summary.merge_all()
             writer = tf.summary.FileWriter(log_path, self.sess.graph)
             self.summary_writer = writer
-        return {'merged': merged,
-                'summary_writer': writer}
+        return merged
 
     def write_summary(self, mg):
-        with self.sess:
-            self.summary_writer.add_summary(mg, self.iter_num)
+        self.sess.as_default()
+        self.summary_writer.add_summary(mg, self.iter_num)
 
     def close_summary_writer(self):
         if self.summary_writer is None:
