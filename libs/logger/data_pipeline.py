@@ -100,12 +100,14 @@ class DataPipeline(object):
             raise IOError('No such file: \'%s\'' % file_path_name)
         images_tensor = recorder.load_sample(file_path_name, batch_size, None)
         return images_tensor
+
     @staticmethod
-    def tensor2data( tensor):
+    def tensor2data(tensor, normal=True):
         with tf.Session() as sess:
             coord = tf.train.Coordinator()
             threads = tf.train.start_queue_runners(sess=sess, coord=coord)
             data = sess.run(tensor)
             coord.request_stop()
             coord.join(threads)
+        data = data / 255. - 0.5 if normal else data
         return data

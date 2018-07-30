@@ -17,6 +17,8 @@ def train_model(name, inster_number, annotation):
 
 def test_model(name, model_path, model_name, parameter_name):
     if name == 'DCGAN':
-        info_dict = {'model_name': join(model_path, model_name), 'parameter_name': join(model_path, parameter_name)}
+        info_dict = {'model_name': join(model_path, model_name),
+                     'parameter_name': join(model_path, parameter_name),
+                     'batch_size':128}
         line = DCGANLine('test', info_dict)
-        line.restore_test_context()
+        return line.restore_test_context()
