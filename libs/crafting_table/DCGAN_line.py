@@ -115,11 +115,13 @@ class DCGANLine(AssemblyLine):
                     j = 0
                     print('Iter:%d  G_loss:%f,D_loss:%f' % (iter, G_loss_curr, D_loss_curr))
                     samples = self.sess.run(self.network.get_pred()['gen_im'], feed_dict={
-                        self.network.Z: self.sample_Z(10000, self.network.Z_dim),
-                        self.network.on_train: False, self.network.batch_pattern: 10000})
+                        self.network.Z: self.sample_Z(1000, self.network.Z_dim),
+                        self.network.on_train: False, self.network.batch_pattern: 1000})
                     PATH = './temp_CNN_num%d' % self.inster_number
-                    for line in range(10000):
-                        mk_dir(PATH)
+                    for temp_file in os.listdir(PATH):
+                        os.remove(join(PATH,temp_file))
+                    mk_dir(PATH)
+                    for line in range(1000):
                         cv2.imwrite(join(PATH, '%08d.jpg' % j),
                                     np.round((samples[line, :, :, 0] + 0.5) * 255))
                         j += 1
