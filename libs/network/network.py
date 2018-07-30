@@ -40,7 +40,7 @@ class Network(object):
     def structure_loss(self):
         raise NotImplementedError('Must be subclassed.')
 
-    def define_optimizer(self):
+    def define_optimizer(self,loss_dict):
         raise NotImplementedError('Must be subclassed.')
 
     def get_trainable_var(self, name):

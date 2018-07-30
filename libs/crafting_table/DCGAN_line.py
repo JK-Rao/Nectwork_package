@@ -66,8 +66,8 @@ class DCGANLine(AssemblyLine):
 
     def structure_train_context(self):
         saver = self.get_saver(self.network.get_trainable_var(self.network.net_name[0]))
-        opti_dict = self.network.define_optimizer()
         loss_dict = self.network.structure_loss()
+        opti_dict = self.network.define_optimizer(loss_dict)
         merged = self.create_summary('.logs/log_num%d' % self.iter_num)
         with self.sess:
             self.sess.run(tf.global_variables_initializer())
