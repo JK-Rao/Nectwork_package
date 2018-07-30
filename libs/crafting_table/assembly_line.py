@@ -1,6 +1,6 @@
 # _*_ coding: utf-8 _*_
 # @Time      18-7-27 下午5:15
-# @File      test2.py
+# @File      assembly.py
 # @Software  PyCharm
 # @Author    JK.Rao
 
@@ -50,5 +50,9 @@ class AssemblyLine(object):
         self.sess.as_default()
         saver.save(self.sess, save_path_name, write_meta_graph=write_meta_graph)
 
-
-
+    def restore_model(self, model_name,parameter_name):
+        saver = tf.train.import_meta_graph(model_name)
+        graph = tf.get_default_graph()
+        self.sess.run(tf.global_variables_initializer())
+        saver.restore(self.sess, parameter_name)
+        return graph

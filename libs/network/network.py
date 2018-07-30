@@ -1,6 +1,6 @@
 # _*_ coding: utf-8 _*_
 # @Time      18-7-27 下午5:15
-# @File      test2.py
+# @File      network.py
 # @Software  PyCharm
 # @Author    JK.Rao
 
@@ -26,6 +26,9 @@ class Network(object):
         self.layers = []
 
     def setup(self):
+        raise NotImplementedError('Must be subclassed.')
+
+    def restore(self):
         raise NotImplementedError('Must be subclassed.')
 
     def get_summary(self):

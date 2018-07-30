@@ -1,6 +1,6 @@
 # _*_ coding: utf-8 _*_
 # @Time      18-7-27 下午5:15
-# @File      test2.py
+# @File      DCGAN_line.py
 # @Software  PyCharm
 # @Author    JK.Rao
 
@@ -13,6 +13,7 @@ import cv2
 from os.path import join
 import os
 from ..network.factory import get_network
+from ..network.factory import get_network_name
 from ..logger.factory import get_sample_tensor
 from ..logger.data_pipeline import DataPipeline
 from ..tools.gadget import mk_dir
@@ -20,12 +21,22 @@ from ..tools.overfitting_monitor import random_sampling
 
 
 class DCGANLine(AssemblyLine):
-    def __init__(self, inster_number, annotion, batch_size, val_size):
-        AssemblyLine.__init__(self, DCGANLine.get_config(), get_network('DCGAN'))
-        self.inster_number = inster_number
-        self.annotion = annotion
-        self.batch_size = batch_size
-        self.val_size = val_size
+    def __init__(self, propose, info_dict):
+        if propose == 'train':
+            AssemblyLine.__init__(self, DCGANLine.get_config(), get_network('DCGAN'))
+            self.inster_number = info_dict['inster_number']
+            self.annotation = info_dict['annotation']
+            self.batch_size = info_dict['batch_size']
+            self.val_size = info_dict['val_size']
+            self.IMG_CHANEL = self.network.IMG_CHANEL
+        elif propose == 'test':
+            AssemblyLine.__init__(self, DCGANLine.get_config(), None)
+            self.model_name = info_dict['model_name']
+            self.parameter_name = info_dict['parameter_name']
+            self.Z_dim = 100
+            self.IMG_CHANEL = 1
+        else:
+            raise ValueError('No type like:%s of DCGANLine class...' % propose)
 
     @staticmethod
     def get_config():
@@ -46,7 +57,7 @@ class DCGANLine(AssemblyLine):
             plt.axis('off')
             ax.set_xticklabels([])
             ax.set_aspect('equal')
-            if self.network.IMG_CHANEL == 1:
+            if self.IMG_CHANEL == 1:
                 plt.imshow(sample.reshape(32, 20), cmap='Greys_r')
             else:
                 plt.imshow(sample.reshape(32, 20, self.network.IMG_CHANEL), cmap='Greys_r')
@@ -56,14 +67,14 @@ class DCGANLine(AssemblyLine):
         saver = self.get_saver(self.network.get_trainable_var(self.network.net_name[0]))
         opti_dict = self.network.define_optimizer()
         loss_dict = self.network.structure_loss()
-        merged=self.create_summary('.logs/log_num%d'%self.iter_num)
+        merged = self.create_summary('.logs/log_num%d' % self.iter_num)
         with self.sess:
             self.sess.run(tf.global_variables_initializer())
             self.save_model(saver,
-                            './model_DCGAN_num%d%s/iter_meta.ckpt' % (self.inster_number, self.annotion))
+                            './model_DCGAN_num%d%s/iter_meta.ckpt' % (self.inster_number, self.annotation))
 
             i = 0
-            mk_dir('out_bank_CNN_num%d%s/' % (self.inster_number, self.annotion))
+            mk_dir('out_bank_CNN_num%d%s/' % (self.inster_number, self.annotation))
             X_mb_tensor = get_sample_tensor('DCGAN', self.sess, 'train', self.batch_size,
                                             'train_num%d' % self.inster_number)
             X_val_tensor = get_sample_tensor('DCGAN', self.sess, 'val', self.val_size,
@@ -76,7 +87,7 @@ class DCGANLine(AssemblyLine):
                         self.network.Z: self.sample_Z(16, self.network.Z_dim), self.network.on_train: False,
                         self.network.batch_pattern: 16})  # 16*784
                     fig = self.plot(samples)
-                    plt.savefig('out_bank_CNN_num%d%s/' % (self.inster_number, self.annotion) + '/{}.png'.format(
+                    plt.savefig('out_bank_CNN_num%d%s/' % (self.inster_number, self.annotation) + '/{}.png'.format(
                         str(i).zfill(3)),
                                 bbox_inches='tight')
                     i += 1
@@ -126,8 +137,26 @@ class DCGANLine(AssemblyLine):
                 gl_step = self.sess.run(self.network.global_step)
                 if gl_step % 10000 == 0:
                     self.save_model(saver, './model_DCGAN_num%d%s/iter_%d_num%d.ckpt' \
-                                    % (self.inster_number, self.annotion, gl_step, self.inster_number),
+                                    % (self.inster_number, self.annotation, gl_step, self.inster_number),
                                     write_meta_graph=False)
             self.close_summary_writer()
+        self.sess.close()
 
+    def restore_test_context(self):
+        mk_dir('./out')
+        graph = self.restore_model(self.model_name, self.parameter_name)
+        Z = graph.get_operation_by_name('Z').outputs[0]
+        on_train = graph.get_operation_by_name('on_train').outputs[0]
+        batch_size = graph.get_operation_by_name('batch_size').outputs[0]
+        gen_im = graph.get_collection('out', scope=get_network_name('DCGAN')[0])[0]
+        # gen_vars = self.network.get_trainable_var(self.network.net_name[0])
+
+        for iter_num in range(8):
+            print('print img %d/%d' % (iter_num, 8))
+            samples = self.sess.run(gen_im, feed_dict={
+                Z: self.sample_Z(16, 100), on_train: False,
+                batch_size: 16})
+            fig = self.plot(samples)
+            plt.savefig('out/' + '%08d.png' % iter_num, bbox_inches='tight')
+            plt.close(fig)
         self.sess.close()
