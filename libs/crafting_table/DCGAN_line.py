@@ -81,7 +81,7 @@ class DCGANLine(AssemblyLine):
             X_val_tensor = get_sample_tensor('DCGAN', self.sess, 'val', self.val_size,
                                              'val_num%d' % self.inster_number)
 
-            for iter in range(200000):
+            for iter in range(70000):
                 if iter % 1000 == 0:
                     self.iter_num = iter
                     samples = self.sess.run(self.network.get_pred()['gen_im'], feed_dict={
