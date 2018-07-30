@@ -64,10 +64,10 @@ class DCGANnet(Network):
     def define_optimizer(self):
         loss_dict = self.structure_loss()
         D_optimizer = tf.train.AdamOptimizer(0.0002).minimize(loss_dict['d_loss'],
-                                                              var_list=self.get_gen_vars())
+                                                              var_list=self.get_dis_vars())
         G_optimizer = tf.train.AdamOptimizer(0.001).minimize(loss_dict['g_loss'],
                                                              global_step=self.global_step,
-                                                             var_list=self.get_dis_vars())
+                                                             var_list=self.get_gen_vars())
         return {'d_opti': D_optimizer, 'g_opti': G_optimizer}
 
     def setup_g(self, x, scope_name, reuse=False, load_net=False):

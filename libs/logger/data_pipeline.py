@@ -102,12 +102,7 @@ class DataPipeline(object):
         return images_tensor
 
     @staticmethod
-    def tensor2data(tensor, normal=True):
-        with tf.Session() as sess:
-            coord = tf.train.Coordinator()
-            threads = tf.train.start_queue_runners(sess=sess, coord=coord)
-            data = sess.run(tensor)
-            coord.request_stop()
-            coord.join(threads)
+    def tensor2data(sess,tensor, normal=True):
+        data = sess.run(tensor)
         data = data / 255. - 0.5 if normal else data
         return data

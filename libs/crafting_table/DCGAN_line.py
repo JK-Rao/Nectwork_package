@@ -81,6 +81,9 @@ class DCGANLine(AssemblyLine):
             X_val_tensor = get_sample_tensor('DCGAN', self.sess, 'val', self.val_size,
                                              'val_num%d' % self.inster_number)
 
+            coord = tf.train.Coordinator()
+            threads = tf.train.start_queue_runners(sess=self.sess, coord=coord)
+
             for iter in range(70000):
                 if iter % 1000 == 0:
                     self.iter_num = iter
@@ -93,7 +96,7 @@ class DCGANLine(AssemblyLine):
                                 bbox_inches='tight')
                     i += 1
                     plt.close(fig)
-                X_mb = DataPipeline.tensor2data(X_mb_tensor)
+                X_mb = DataPipeline.tensor2data(self.sess,X_mb_tensor)
 
                 _, D_loss_curr = self.sess.run([opti_dict['d_opti'], loss_dict['d_loss']], feed_dict={
                     self.network.X: X_mb,
@@ -127,7 +130,7 @@ class DCGANLine(AssemblyLine):
                     self.sess.run(tf.assign(self.network.Min_distance, min_dis))
                     self.sess.run(tf.assign(self.network.Ave_distance, ave_dis))
                     # loss record
-                    X_val = DataPipeline.tensor2data(X_val_tensor)
+                    X_val = DataPipeline.tensor2data(self.sess,X_val_tensor)
                     mg = self.sess.run(merged, feed_dict={
                         self.network.X: X_val,
                         self.network.on_train: False,
@@ -140,6 +143,9 @@ class DCGANLine(AssemblyLine):
                     self.save_model(saver, './model_DCGAN_num%d%s/iter_%d_num%d.ckpt' \
                                     % (self.inster_number, self.annotation, gl_step, self.inster_number),
                                     write_meta_graph=False)
+
+            coord.request_stop()
+            coord.join(threads)
             self.close_summary_writer()
         self.sess.close()
 
